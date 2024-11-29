@@ -3,31 +3,63 @@ public class Token {
 
     public final TokenType type;
     public final String lexeme;
+    final int line;
 
-    public Token (TokenType type, String lexeme) {
+    public Token (TokenType type, String lexeme, int line) {
         this.type = type;
         this.lexeme = lexeme;
+        this.line = line;
     }
 
     public String toString() {
-        var type = this.type.toString();
-        if (type.equals("NUMBER"))
-            type =  "intConst";
+    	
+    	//criação da variavel categoria para atualização do metodo
+    	String categoria = type.toString().toLowerCase();
+    	
+    	String valor = lexeme;
+    	
 
-        if (type.equals("STRING"))
-            type =  "stringConst";
+    	if (TokenType.isSymbol(lexeme.charAt(0))) {
+            categoria = "symbol";
+            switch (valor) {
+                case ">":
+                    valor = "&gt;";
+                    break;
+                case "<":
+                    valor = "&lt;";
+                    break;
+                case "\"":
+                    valor = "&quot;";
+                    break;
+                case "&":
+                    valor = "&amp;";
+                    break;
+            }
+        } else if (categoria.equals("number")) {
+            categoria = "integerConstant";
+        } else if (categoria.equals("ident")) {
+            categoria = "identifier";
+        } else if (categoria.equals("string")) {
+            categoria = "stringConstant";
+        } else {
+            categoria = "keyword";
+        }
 
-        if (type.equals("IDENT"))
-            type =  "identifier";
-
-        if (TokenType.isSymbol(lexeme.charAt(0)))
-            type = "symbol";
-
-        if (TokenType.isKeyword(this.type) )
-            type = "keyword";
-    
-
-        return "<"+ type +">" + lexeme + "</"+ type + ">";
+        return "<" + categoria + "> " + valor + " </" + categoria + ">";
+        
+        
+        /*
+         * 
+         * dessa forma printou 
+         <integerConstant> 45 </integerConstant>
+<stringConstant> hello </stringConstant>
+<identifier> variavel </identifier>
+<symbol> + </symbol>
+<keyword> while </keyword>
+<symbol> &lt; </symbol>
+<symbol> , </symbol>
+<keyword> if </keyword>*/
+        
     }
     
 }
