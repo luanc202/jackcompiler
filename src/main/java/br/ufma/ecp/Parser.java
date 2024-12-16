@@ -108,6 +108,15 @@ public class Parser {
 
     }
 
+    private void expectPeek(TokenType type) {
+        if (peekToken.type == type) {
+            nextToken();
+            xmlOutput.append(String.format("%s\r\n", currentToken.toString()));
+        } else {
+            throw error(peekToken, "Expected "+type.name());
+        }
+    }
+
     private static void report(int line, String where,
                                String message) {
         System.err.println(
