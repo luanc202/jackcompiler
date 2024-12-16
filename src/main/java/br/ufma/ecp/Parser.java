@@ -30,6 +30,33 @@ public class Parser {
         match(TokenType.NUMBER);
     }
 
+    void parseTerm() {
+        printNonTerminal("term");
+        switch (peekToken.type) {
+            case NUMBER:
+                expectPeek(TokenType.NUMBER);
+                break;
+            case STRING:
+                expectPeek(TokenType.STRING);
+                break;
+            case FALSE:
+            case NULL:
+            case TRUE:
+                expectPeek(TokenType.FALSE, TokenType.NULL, TokenType.TRUE);
+                break;
+            case THIS:
+                expectPeek(TokenType.THIS);
+                break;
+            case IDENT:
+                expectPeek(TokenType.IDENT);
+                break;
+            default:
+                throw error(peekToken, "term expected");
+        }
+
+        printNonTerminal("/term");
+    }
+
     private void nextToken () {
         currentToken = peekToken;
         peekToken = scan.nextToken();
