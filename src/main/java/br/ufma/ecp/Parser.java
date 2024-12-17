@@ -87,6 +87,28 @@ public class Parser {
             throw new Error("syntax error");
         }
     }
+    
+    
+    void parseLet() {
+        printNonTerminal("letStatement");  
+        
+        expectPeek(TokenType.LET);         
+        expectPeek(TokenType.IDENT);       
+
+        if (peekTokenIs(TokenType.LBRACKET)) {  
+            expectPeek(TokenType.LBRACKET);
+            parseExpression();
+            expectPeek(TokenType.RBRACKET);
+        }
+
+        expectPeek(TokenType.EQUALS);          
+        parseExpression();                 
+        expectPeek(TokenType.SEMICOLON);   
+
+        printNonTerminal("/letStatement"); 
+    }
+
+
 
     void parseExpression() {
         printNonTerminal("expression");
@@ -157,5 +179,12 @@ public class Parser {
     private void printNonTerminal(String nterminal) {
         xmlOutput.append(String.format("<%s>\r\n", nterminal));
     }
+
+	public void parseSubroutineCall() {	
+	    expectPeek(TokenType.IDENT);  
+	    expectPeek(TokenType.LPAREN); 
+	    expectPeek(TokenType.RPAREN); 
+
+	}
 
 }
