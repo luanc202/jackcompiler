@@ -87,6 +87,38 @@ public class Parser {
             throw new Error("syntax error");
         }
     }
+    
+    
+    void parseLet() {
+        printNonTerminal("letStatement");  
+        
+        expectPeek(TokenType.LET);         
+        expectPeek(TokenType.IDENT);       
+
+        if (peekTokenIs(TokenType.LBRACKET)) {  
+            expectPeek(TokenType.LBRACKET);
+            parseExpression();
+            expectPeek(TokenType.RBRACKET);
+        }
+
+        expectPeek(TokenType.EQUALS);          
+        parseExpression();                 
+        expectPeek(TokenType.SEMICOLON);   
+
+        printNonTerminal("/letStatement"); 
+    }
+
+
+
+    void parseExpression() {
+        printNonTerminal("expression");
+        parseTerm ();
+        while (isOperator(peekToken.lexeme)) {
+            expectPeek(peekToken.type);
+            parseTerm();
+        }
+        printNonTerminal("/expression");
+    }
 
     boolean peekTokenIs(TokenType type) {
         return peekToken.type == type;
@@ -94,6 +126,10 @@ public class Parser {
 
     boolean currentTokenIs(TokenType type) {
         return currentToken.type == type;
+    }
+
+    static public boolean isOperator(String op) {
+        return op!= "" && "+-*/<>=~&|".contains(op);
     }
 
     private void expectPeek(TokenType... types) {
@@ -143,5 +179,41 @@ public class Parser {
     private void printNonTerminal(String nterminal) {
         xmlOutput.append(String.format("<%s>\r\n", nterminal));
     }
+    
+    void parseExpressionList() {
+        if (peekTokenIs(TokenType.RPAREN)) {
+            return; 
+        }
+
+        parseExpression();
+        while (peekTokenIs(TokenType.COMMA)) {
+            expectPeek(TokenType.COMMA);
+            parseExpression();
+        }
+    }
+
+
+	public void parseSubroutineCall() {	
+	    expectPeek(TokenType.IDENT); 
+	    
+	    if (peekTokenIs(TokenType.DOT)) {
+	    	expectPeek(TokenType.DOT);
+	    	expectPeek(TokenType.IDENT); 
+	    }
+	    
+	    expectPeek(TokenType.LPAREN); 
+	    parseExpressionList();        
+	    expectPeek(TokenType.RPAREN);
+	}
+
+	void parseDo() {
+		printNonTerminal("doStatement");
+	    expectPeek(TokenType.DO);
+	    parseSubroutineCall();
+	    expectPeek(TokenType.SEMICOLON);
+	    printNonTerminal("/doStatement");
+	}
+
+
 
 }
