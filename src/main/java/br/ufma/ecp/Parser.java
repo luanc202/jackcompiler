@@ -88,12 +88,26 @@ public class Parser {
         }
     }
 
+    void parseExpression() {
+        printNonTerminal("expression");
+        parseTerm ();
+        while (isOperator(peekToken.lexeme)) {
+            expectPeek(peekToken.type);
+            parseTerm();
+        }
+        printNonTerminal("/expression");
+    }
+
     boolean peekTokenIs(TokenType type) {
         return peekToken.type == type;
     }
 
     boolean currentTokenIs(TokenType type) {
         return currentToken.type == type;
+    }
+
+    static public boolean isOperator(String op) {
+        return op!= "" && "+-*/<>=~&|".contains(op);
     }
 
     private void expectPeek(TokenType... types) {
