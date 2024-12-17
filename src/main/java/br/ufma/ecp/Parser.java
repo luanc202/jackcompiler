@@ -179,12 +179,41 @@ public class Parser {
     private void printNonTerminal(String nterminal) {
         xmlOutput.append(String.format("<%s>\r\n", nterminal));
     }
+    
+    void parseExpressionList() {
+        if (peekTokenIs(TokenType.RPAREN)) {
+            return; 
+        }
+
+        parseExpression();
+        while (peekTokenIs(TokenType.COMMA)) {
+            expectPeek(TokenType.COMMA);
+            parseExpression();
+        }
+    }
+
 
 	public void parseSubroutineCall() {	
-	    expectPeek(TokenType.IDENT);  
+	    expectPeek(TokenType.IDENT); 
+	    
+	    if (peekTokenIs(TokenType.DOT)) {
+	    	expectPeek(TokenType.DOT);
+	    	expectPeek(TokenType.IDENT); 
+	    }
+	    
 	    expectPeek(TokenType.LPAREN); 
-	    expectPeek(TokenType.RPAREN); 
-
+	    parseExpressionList();        
+	    expectPeek(TokenType.RPAREN);
 	}
+
+	void parseDo() {
+		printNonTerminal("doStatement");
+	    expectPeek(TokenType.DO);
+	    parseSubroutineCall();
+	    expectPeek(TokenType.SEMICOLON);
+	    printNonTerminal("/doStatement");
+	}
+
+
 
 }
