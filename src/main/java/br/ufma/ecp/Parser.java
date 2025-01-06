@@ -36,6 +36,7 @@ public class Parser {
         switch (peekToken.type) {
             case NUMBER:
                 expectPeek(TokenType.NUMBER);
+                vmWriter.writePush(VMWriter.Segment.CONST, Integer.parseInt(currentToken.lexeme));
                 break;
             case STRING:
                 expectPeek(TokenType.STRING);
