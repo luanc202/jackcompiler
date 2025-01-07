@@ -3,6 +3,8 @@ package br.ufma.ecp;
 import br.ufma.ecp.token.Token;
 import br.ufma.ecp.token.TokenType;
 
+import java.util.Objects;
+
 public class Parser {
 
     private Scanner scan;
@@ -116,8 +118,10 @@ public class Parser {
         printNonTerminal("expression");
         parseTerm ();
         while (isOperator(peekToken.lexeme)) {
+            TokenType operator = peekToken.type;
             expectPeek(peekToken.type);
             parseTerm();
+            compileOperators(operator);
         }
         printNonTerminal("/expression");
     }
@@ -216,6 +220,33 @@ public class Parser {
 	    printNonTerminal("/doStatement");
 	}
 
+    private Command typeOperator(TokenType type) {
+        if (type == TokenType.PLUS)
+            return Command.ADD;
+        if (type == TokenType.MINUS)
+            return Command.SUB;
+        if (type == TokenType.LOWER)
+            return Command.LT;
+        if (type == TokenType.GREATER)
+            return Command.GT;
+        if (type == TokenType.EQUALS)
+            return Command.EQ;
+        if (type == TokenType.AND)
+            return Command.AND;
+        if (type == TokenType.OR)
+            return Command.OR;
+        return null;
+    }
 
+    public void compileOperators(TokenType type) {
+
+        if (type == TokenType.ASTERISK) {
+            vmWriter.writeCall("Math.multiply", 2);
+        } else if (type == TokenType.SLASH) {
+            vmWriter.writeCall("Math.divide", 2);
+        } else {
+            vmWriter.writeArithmetic(Objects.requireNonNull(typeOperator(type)));
+        }
+    }
 
 }
