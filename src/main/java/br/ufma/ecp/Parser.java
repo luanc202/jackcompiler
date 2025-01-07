@@ -242,6 +242,21 @@ public class Parser {
 	    printNonTerminal("/doStatement");
 	}
 
+    void parseReturn() {
+        printNonTerminal("returnStatement");
+
+        expectPeek(TokenType.RETURN);
+        if (!peekTokenIs(TokenType.SEMICOLON)) {
+            parseExpression();
+        } else {
+            vmWriter.writePush(VMWriter.Segment.CONST, 0);
+        }
+        expectPeek(TokenType.SEMICOLON);
+        vmWriter.writeReturn();
+
+        printNonTerminal("/returnStatement");
+    }
+
     private Command typeOperator(TokenType type) {
         if (type == TokenType.PLUS)
             return Command.ADD;
