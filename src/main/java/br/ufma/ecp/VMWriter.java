@@ -20,18 +20,6 @@ public class VMWriter {
         public final String value;
     };
 
-    enum Command {
-        ADD,
-        SUB,
-        NEG,
-        EQ,
-        GT,
-        LT,
-        AND,
-        OR,
-        NOT
-    };
-
     public String vmOutput() {
         return vmOutput.toString();
     }
