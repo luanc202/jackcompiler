@@ -66,6 +66,16 @@ public class Parser {
             case IDENT:
                 expectPeek(TokenType.IDENT);
                 break;
+            case NOT:
+                expectPeek(TokenType.NOT, TokenType.MINUS);
+                TokenType operator = currentToken.type;
+                parseTerm();
+
+                if (operator.equals(TokenType.MINUS)) {
+                    vmWriter.writeArithmetic(Command.NEG);
+                } else {
+                    vmWriter.writeArithmetic(Command.NOT);
+                }
             default:
                 throw error(peekToken, "term expected");
         }
