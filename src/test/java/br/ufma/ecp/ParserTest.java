@@ -2,6 +2,7 @@ package br.ufma.ecp;
 
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
@@ -159,6 +160,18 @@ public class ParserTest extends TestSupport {
         var result = parser.XMLOutput();
         expectedResult = expectedResult.replaceAll("  ", "");
         result = result.replaceAll("\r", ""); // no codigo em linux não tem o retorno de carro
+        assertEquals(expectedResult, result);
+    }
+
+    @Test
+    public void testParserWithSquare() throws IOException {
+        var input = fromFile("Square/Square.jack");
+        var expectedResult =  fromFile("Square/Square.xml");
+
+        var parser = new Parser(input.getBytes(StandardCharsets.UTF_8));
+        parser.parse();
+        var result = parser.XMLOutput();
+        expectedResult = expectedResult.replaceAll("  ", "");
         assertEquals(expectedResult, result);
     }
 

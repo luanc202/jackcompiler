@@ -23,6 +23,7 @@ public enum TokenType {
     SEMICOLON(";"),
     COMMA(","),
 
+
      // Literals.
      NUMBER("0123456789"),
      STRING("STRING"),
