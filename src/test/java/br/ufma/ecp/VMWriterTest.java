@@ -258,7 +258,7 @@ public class VMWriterTest {
                   }
                 
                 }
-            """;;
+            """;
         var parser = new Parser(input.getBytes(StandardCharsets.UTF_8));
         parser.parse();
         String actual = parser.VMOutput();
