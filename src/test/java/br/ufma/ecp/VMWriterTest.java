@@ -164,7 +164,7 @@ public class VMWriterTest {
             """;
 
         var parser = new Parser(input.getBytes(StandardCharsets.UTF_8));
-        parser.parseReturn();
+        parser.parseStatement();
         String actual = parser.VMOutput();
         String expected = """
                 push constant 0
@@ -180,7 +180,7 @@ public class VMWriterTest {
             """;
 
         var parser = new Parser(input.getBytes(StandardCharsets.UTF_8));
-        parser.parseReturn();
+        parser.parseStatement();
         String actual = parser.VMOutput();
         String expected = """
                 push constant 10
@@ -200,7 +200,7 @@ public class VMWriterTest {
             """;
 
         var parser = new Parser(input.getBytes(StandardCharsets.UTF_8));
-        parser.parseIf();
+        parser.parseStatement();
         String actual = parser.VMOutput();
         String expected = """
             push constant 0
@@ -227,7 +227,7 @@ public class VMWriterTest {
             """;
 
         var parser = new Parser(input.getBytes(StandardCharsets.UTF_8));
-        parser.parseWhile();
+        parser.parseStatement();
         String actual = parser.VMOutput();
         String expected = """
                 label WHILE_EXP0
@@ -258,7 +258,7 @@ public class VMWriterTest {
                   }
                 
                 }
-            """;;
+            """;
         var parser = new Parser(input.getBytes(StandardCharsets.UTF_8));
         parser.parse();
         String actual = parser.VMOutput();
