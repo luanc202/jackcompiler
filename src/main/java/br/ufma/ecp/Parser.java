@@ -6,6 +6,7 @@ import br.ufma.ecp.SymbolTable;
 
 import br.ufma.ecp.SymbolTable.Kind;
 
+import javax.swing.text.Segment;
 import java.util.Objects;
 
 public class Parser {
@@ -73,7 +74,21 @@ public class Parser {
                 vmWriter.writePush(VMWriter.Segment.POINTER, 0);
                 break;
             case IDENT:
+
                 expectPeek(TokenType.IDENT);
+                Symbol sym = symTable.resolve(currentToken.lexeme);
+                if (peekTokenIs(TokenType.LPAREN) || peekTokenIs(TokenType.DOT)) {
+                    parseSubroutineCall();
+                } else {
+                    if (peekTokenIs(TokenType.LBRACKET)) {
+                        expectPeek(TokenType.LBRACKET);
+                        parseExpression();
+                        expectPeek(TokenType.RBRACKET);
+                    } else {
+                        vmWriter.writePush(kind2Segment(sym.kind()), sym.index());
+                    }
+                }
+
                 break;
             case MINUS:
             case NOT:
@@ -124,25 +139,39 @@ public class Parser {
             throw new Error("syntax error");
         }
     }
-    
-    
-    void parseLet() {
-        printNonTerminal("letStatement");  
-        
-        expectPeek(TokenType.LET);         
-        expectPeek(TokenType.IDENT);       
 
-        if (peekTokenIs(TokenType.LBRACKET)) {  
+
+    void parseLet() {
+
+        var isArray = false;
+
+        printNonTerminal("letStatement");
+        expectPeek(TokenType.LET);
+        expectPeek(TokenType.IDENT);
+
+        var symbol = symbolTable.resolve(currentToken.lexeme);
+
+        if (peekTokenIs(TokenType.LBRACKET)) {
             expectPeek(TokenType.LBRACKET);
             parseExpression();
             expectPeek(TokenType.RBRACKET);
+
+            isArray = true;
         }
 
-        expectPeek(TokenType.EQUALS);          
-        parseExpression();                 
-        expectPeek(TokenType.SEMICOLON);   
+        expectPeek(TokenType.EQ);
+        parseExpression();
 
-        printNonTerminal("/letStatement"); 
+        if (isArray) {
+
+
+        } else {
+            vmWriter.writePop(kind2Segment(symbol.kind()), symbol.index());
+        }
+
+
+        expectPeek(TokenType.SEMICOLON);
+        printNonTerminal("/letStatement");
     }
 
     void parseClassVarDec() {
@@ -465,6 +494,18 @@ public class Parser {
             return Command.AND;
         if (type == TokenType.OR)
             return Command.OR;
+        return null;
+    }
+
+    private Segment kind2Segment(Kind kind) {
+        if (kind == Kind.STATIC)
+            return Segment.STATIC;
+        if (kind == Kind.FIELD)
+            return Segment.THIS;
+        if (kind == Kind.VAR)
+            return Segment.LOCAL;
+        if (kind == Kind.ARG)
+            return Segment.ARG;
         return null;
     }
 
