@@ -24,64 +24,65 @@ public enum TokenType {
     COMMA(","),
 
 
-     // Literals.
-     NUMBER("0123456789"),
-     STRING("STRING"),
+    // Literals.
+    NUMBER("0123456789"),
+    STRING("STRING"),
 
-     IDENT("IDENT"),
+    IDENT("IDENT"),
 
- 
-     // keywords
-     METHOD("method"),
-     WHILE("while"),
-     IF("if"),
-     CLASS("class"),
-     CONSTRUCTOR("constructor"),
-     FUNCTION("function"),
-     FIELD("field"),
-     STATIC("static"),
-     VAR("var"),
-     CHAR("char"),
-     BOOLEAN("boolean"),
-     VOID("void"),
-     TRUE("true"),
-     FALSE("false"),
-     NULL("null"),
-     THIS("this"),
-     LET("let"),
-     DO("do"),
-     ELSE("else"),
-     RETURN("return"),
-     INT("int"),
 
-     EOF("\0"),
+    // keywords
+    METHOD("method"),
+    WHILE("while"),
+    IF("if"),
+    CLASS("class"),
+    CONSTRUCTOR("constructor"),
+    FUNCTION("function"),
+    FIELD("field"),
+    STATIC("static"),
+    VAR("var"),
+    CHAR("char"),
+    BOOLEAN("boolean"),
+    VOID("void"),
+    TRUE("true"),
+    FALSE("false"),
+    NULL("null"),
+    THIS("this"),
+    LET("let"),
+    DO("do"),
+    ELSE("else"),
+    RETURN("return"),
+    INT("int"),
 
-     ILLEGAL("ILLEGAL");
+    EOF("\0"),
 
-     static public boolean isSymbol (char c) {
+    ILLEGAL("ILLEGAL");
+
+    private String string;
+    public final String value;
+    TokenType(String value) {
+        this.value = value;
+    }
+
+    static public boolean isSymbol(char c) {
         String symbols = "{}()[].,;+-*/&|<>=~";
         return symbols.indexOf(c) > -1;
     }
 
-    private String string;
-
-    TokenType(String value) {
+    static public boolean isKeyword(TokenType type) {
+        List<TokenType> keywords =
+                List.of(
+                        METHOD,
+                        WHILE,
+                        IF,
+                        CLASS,
+                        CONSTRUCTOR
+                );
+        return keywords.contains(type);
     }
 
     public String getString() {
-         return this.string;
-    }
-
-    static public boolean isKeyword (TokenType type) {
-        List<TokenType> keywords  = 
-            List.of(
-                METHOD,
-                WHILE,
-                IF,
-                CLASS,
-                CONSTRUCTOR
-            );
-            return keywords.contains(type);
+        return this.string;
     }
 
 }

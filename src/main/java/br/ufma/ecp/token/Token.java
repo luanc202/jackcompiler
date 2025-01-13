@@ -11,6 +11,10 @@ public class Token {
         this.line = line;
     }
 
+    public String value() {
+        return type.value;
+    }
+
     public String toString() {
     	
     	//criação da variavel categoria para atualização do metodo
