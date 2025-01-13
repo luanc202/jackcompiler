@@ -58,8 +58,9 @@ public enum TokenType {
 
     ILLEGAL("ILLEGAL");
 
-    private String string;
     public final String value;
+    private String string;
+
     TokenType(String value) {
         this.value = value;
     }
