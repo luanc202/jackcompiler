@@ -2,7 +2,6 @@ package br.ufma.ecp;
 
 import br.ufma.ecp.token.Token;
 import br.ufma.ecp.token.TokenType;
-import br.ufma.ecp.SymbolTable;
 
 import br.ufma.ecp.SymbolTable.Kind;
 
@@ -15,20 +14,30 @@ public class Parser {
     private Token peekToken;
     private StringBuilder xmlOutput = new StringBuilder();
     private VMWriter vmWriter = new VMWriter();
-    private Integer ifLabelNum = 0 ;
+    private Integer ifLabelNum = 0;
     private Integer whileLabelNum = 0;
     private SymbolTable symTable = new SymbolTable();
-    
+
     private String className = "";
 
 
-    public Parser (byte[] input) {
+    public Parser(byte[] input) {
         scan = new Scanner(input);
         nextToken();
-        
+
     }
 
-    public void parse () {
+    static public boolean isOperator(String op) {
+        return op != "" && "+-*/<>=~&|".contains(op);
+    }
+
+    private static void report(int line, String where,
+                               String message) {
+        System.err.println(
+                "[line " + line + "] Error" + where + ": " + message);
+    }
+
+    public void parse() {
         parseClass();
     }
 
@@ -37,7 +46,7 @@ public class Parser {
         oper();
     }
 
-    void number () {
+    void number() {
         System.out.println(currentToken.lexeme);
         match(TokenType.NUMBER);
     }
@@ -74,6 +83,25 @@ public class Parser {
                 break;
             case IDENT:
                 expectPeek(TokenType.IDENT);
+
+                SymbolTable.Symbol sym = symTable.resolve(currentToken.lexeme);
+
+                if (peekTokenIs(TokenType.LPAREN) || peekTokenIs(TokenType.DOT)) {
+                    parseSubroutineCall();
+                } else {
+                    if (peekTokenIs(TokenType.LBRACKET)) {
+                        expectPeek(TokenType.LBRACKET);
+                        parseExpression();
+                        expectPeek(TokenType.RBRACKET);
+                    } else {
+                        vmWriter.writePush(Objects.requireNonNull(kindToSegment(sym.kind())), sym.index());
+                    }
+                }
+                break;
+            case LPAREN:
+                expectPeek(TokenType.LPAREN);
+                parseExpression();
+                expectPeek(TokenType.RPAREN);
                 break;
             case MINUS:
             case NOT:
@@ -94,20 +122,20 @@ public class Parser {
         printNonTerminal("/term");
     }
 
-    private void nextToken () {
+    private void nextToken() {
         currentToken = peekToken;
         peekToken = scan.nextToken();
     }
 
-   private void match(TokenType t) {
+    private void match(TokenType t) {
         if (currentToken.type == t) {
             nextToken();
-        }else {
+        } else {
             throw new Error("syntax error");
         }
-   }
+    }
 
-    void oper () {
+    void oper() {
         if (currentToken.type == TokenType.PLUS) {
             match(TokenType.PLUS);
             number();
@@ -124,25 +152,38 @@ public class Parser {
             throw new Error("syntax error");
         }
     }
-    
-    
-    void parseLet() {
-        printNonTerminal("letStatement");  
-        
-        expectPeek(TokenType.LET);         
-        expectPeek(TokenType.IDENT);       
 
-        if (peekTokenIs(TokenType.LBRACKET)) {  
+    void parseLet() {
+
+        var isArray = false;
+
+        printNonTerminal("letStatement");
+
+        expectPeek(TokenType.LET);
+        expectPeek(TokenType.IDENT);
+
+        SymbolTable.Symbol symbol = symTable.resolve(currentToken.lexeme);
+
+        if (peekTokenIs(TokenType.LBRACKET)) {
             expectPeek(TokenType.LBRACKET);
             parseExpression();
             expectPeek(TokenType.RBRACKET);
+
+            isArray = true;
         }
 
-        expectPeek(TokenType.EQUALS);          
-        parseExpression();                 
-        expectPeek(TokenType.SEMICOLON);   
+        expectPeek(TokenType.EQUALS);
+        parseExpression();
 
-        printNonTerminal("/letStatement"); 
+        if (isArray) {
+
+        } else {
+            vmWriter.writePop(Objects.requireNonNull(kindToSegment(symbol.kind())), symbol.index());
+        }
+
+        expectPeek(TokenType.SEMICOLON);
+
+        printNonTerminal("/letStatement");
     }
 
     void parseClassVarDec() {
@@ -199,7 +240,6 @@ public class Parser {
 
         SymbolTable.Kind kind = Kind.VAR;
 
-        // 'int' | 'char' | 'boolean' | className
         expectPeek(TokenType.INT, TokenType.CHAR, TokenType.BOOLEAN, TokenType.IDENT);
         String type = currentToken.lexeme;
 
@@ -227,9 +267,21 @@ public class Parser {
         while (peekTokenIs(TokenType.VAR)) {
             parseVarDec();
         }
-		var nlocals = symTable.varCount(Kind.VAR);
+        var nlocals = symTable.varCount(Kind.VAR);
 
         vmWriter.writeFunction(functionName, nlocals);
+
+        if (subroutineType == TokenType.CONSTRUCTOR) {
+            vmWriter.writePush(VMWriter.Segment.CONST, symTable.varCount(Kind.FIELD));
+            vmWriter.writeCall("Memory.alloc", 1);
+            vmWriter.writePop(VMWriter.Segment.POINTER, 0);
+        }
+
+        if (subroutineType == TokenType.METHOD) {
+            vmWriter.writePush(VMWriter.Segment.ARG, 0);
+            vmWriter.writePop(VMWriter.Segment.POINTER, 0);
+        }
+
 
         parseStatements();
         expectPeek(TokenType.RBRACE);
@@ -331,7 +383,7 @@ public class Parser {
 
     void parseExpression() {
         printNonTerminal("expression");
-        parseTerm ();
+        parseTerm();
         while (isOperator(peekToken.lexeme)) {
             TokenType operator = peekToken.type;
             expectPeek(peekToken.type);
@@ -347,10 +399,6 @@ public class Parser {
 
     boolean currentTokenIs(TokenType type) {
         return currentToken.type == type;
-    }
-
-    static public boolean isOperator(String op) {
-        return op!= "" && "+-*/<>=~&|".contains(op);
     }
 
     private void expectPeek(TokenType... types) {
@@ -370,14 +418,8 @@ public class Parser {
             nextToken();
             xmlOutput.append(String.format("%s\r\n", currentToken.toString()));
         } else {
-            throw error(peekToken, "Expected "+type.name());
+            throw error(peekToken, "Expected " + type.name());
         }
-    }
-
-    private static void report(int line, String where,
-                               String message) {
-        System.err.println(
-                "[line " + line + "] Error" + where + ": " + message);
     }
 
     private ParseError error(Token token, String message) {
@@ -400,40 +442,43 @@ public class Parser {
     private void printNonTerminal(String nterminal) {
         xmlOutput.append(String.format("<%s>\r\n", nterminal));
     }
-    
+
     void parseExpressionList() {
-        if (peekTokenIs(TokenType.RPAREN)) {
-            return; 
+        printNonTerminal("expressionList");
+
+        if (!peekTokenIs(TokenType.RPAREN)) {
+            parseExpression();
         }
 
-        parseExpression();
         while (peekTokenIs(TokenType.COMMA)) {
             expectPeek(TokenType.COMMA);
             parseExpression();
         }
+
+        printNonTerminal("/expressionList");
     }
 
 
-	public void parseSubroutineCall() {	
-	    expectPeek(TokenType.IDENT); 
-	    
-	    if (peekTokenIs(TokenType.DOT)) {
-	    	expectPeek(TokenType.DOT);
-	    	expectPeek(TokenType.IDENT); 
-	    }
-	    
-	    expectPeek(TokenType.LPAREN); 
-	    parseExpressionList();        
-	    expectPeek(TokenType.RPAREN);
-	}
+    public void parseSubroutineCall() {
+        expectPeek(TokenType.IDENT);
 
-	void parseDo() {
-		printNonTerminal("doStatement");
-	    expectPeek(TokenType.DO);
-	    parseSubroutineCall();
-	    expectPeek(TokenType.SEMICOLON);
-	    printNonTerminal("/doStatement");
-	}
+        if (peekTokenIs(TokenType.DOT)) {
+            expectPeek(TokenType.DOT);
+            expectPeek(TokenType.IDENT);
+        }
+
+        expectPeek(TokenType.LPAREN);
+        parseExpressionList();
+        expectPeek(TokenType.RPAREN);
+    }
+
+    void parseDo() {
+        printNonTerminal("doStatement");
+        expectPeek(TokenType.DO);
+        parseSubroutineCall();
+        expectPeek(TokenType.SEMICOLON);
+        printNonTerminal("/doStatement");
+    }
 
     void parseReturn() {
         printNonTerminal("returnStatement");
@@ -499,19 +544,19 @@ public class Parser {
         vmWriter.writeLabel(labelTrue);
 
         expectPeek(TokenType.LBRACE);
-        parseReturn();
+        parseStatements();
         expectPeek(TokenType.RBRACE);
-        if (peekTokenIs(TokenType.ELSE)){
+
+        if (peekTokenIs(TokenType.ELSE)) {
             vmWriter.writeGoto(labelEnd);
         }
 
         vmWriter.writeLabel(labelFalse);
 
-        if (peekTokenIs(TokenType.ELSE))
-        {
+        if (peekTokenIs(TokenType.ELSE)) {
             expectPeek(TokenType.ELSE);
             expectPeek(TokenType.LBRACE);
-            parseReturn();
+            parseStatements();
             expectPeek(TokenType.RBRACE);
             vmWriter.writeLabel(labelEnd);
         }
@@ -537,12 +582,24 @@ public class Parser {
 
         expectPeek(TokenType.RPAREN);
         expectPeek(TokenType.LBRACE);
-        parseReturn();
+        parseStatements();
 
         vmWriter.writeGoto(labelTrue);
         vmWriter.writeLabel(labelFalse);
 
         expectPeek(TokenType.RBRACE);
         printNonTerminal("/whileStatement");
+    }
+
+    private VMWriter.Segment kindToSegment(Kind kind) {
+        if (kind == Kind.STATIC)
+            return VMWriter.Segment.STATIC;
+        if (kind == Kind.FIELD)
+            return VMWriter.Segment.THIS;
+        if (kind == Kind.VAR)
+            return VMWriter.Segment.LOCAL;
+        if (kind == Kind.ARG)
+            return VMWriter.Segment.ARG;
+        return null;
     }
 }

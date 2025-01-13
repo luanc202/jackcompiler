@@ -1,25 +1,30 @@
 package br.ufma.ecp.token;
+
 public class Token {
 
     public final TokenType type;
     public final String lexeme;
     public final int line;
 
-    public Token (TokenType type, String lexeme, int line) {
+    public Token(TokenType type, String lexeme, int line) {
         this.type = type;
         this.lexeme = lexeme;
         this.line = line;
     }
 
-    public String toString() {
-    	
-    	//criação da variavel categoria para atualização do metodo
-    	String categoria = type.toString().toLowerCase();
-    	
-    	String valor = lexeme;
-    	
+    public String value() {
+        return type.value;
+    }
 
-    	if (TokenType.isSymbol(lexeme.charAt(0))) {
+    public String toString() {
+
+        //criação da variavel categoria para atualização do metodo
+        String categoria = type.toString().toLowerCase();
+
+        String valor = lexeme;
+
+
+        if (TokenType.isSymbol(lexeme.charAt(0))) {
             categoria = "symbol";
             switch (valor) {
                 case ">":
@@ -59,7 +64,7 @@ public class Token {
 <symbol> &lt; </symbol>
 <symbol> , </symbol>
 <keyword> if </keyword>*/
-        
+
     }
-    
+
 }
