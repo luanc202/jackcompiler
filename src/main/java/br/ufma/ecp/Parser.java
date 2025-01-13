@@ -343,7 +343,7 @@ public class Parser {
         expectPeek(TokenType.VOID, TokenType.INT, TokenType.CHAR, TokenType.BOOLEAN, TokenType.IDENT);
         expectPeek(TokenType.IDENT);
 
-        var functionName = className + "." + currentToken.value();
+        var functionName = className + "." + currentToken.lexeme;
 
         expectPeek(TokenType.LPAREN);
         parseParameterList();
