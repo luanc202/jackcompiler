@@ -83,6 +83,20 @@ public class Parser {
                 break;
             case IDENT:
                 expectPeek(TokenType.IDENT);
+
+                SymbolTable.Symbol sym = symTable.resolve(currentToken.lexeme);
+
+                if (peekTokenIs(TokenType.LPAREN) || peekTokenIs(TokenType.DOT)) {
+                    parseSubroutineCall();
+                } else {
+                    if (peekTokenIs(TokenType.LBRACKET)) {
+                        expectPeek(TokenType.LBRACKET);
+                        parseExpression();
+                        expectPeek(TokenType.RBRACKET);
+                    } else {
+                        vmWriter.writePush(Objects.requireNonNull(kindToSegment(sym.kind())), sym.index());
+                    }
+                }
                 break;
             case LPAREN:
                 expectPeek(TokenType.LPAREN);
@@ -561,5 +575,17 @@ public class Parser {
 
         expectPeek(TokenType.RBRACE);
         printNonTerminal("/whileStatement");
+    }
+
+    private VMWriter.Segment kindToSegment(Kind kind) {
+        if (kind == Kind.STATIC)
+            return VMWriter.Segment.STATIC;
+        if (kind == Kind.FIELD)
+            return VMWriter.Segment.THIS;
+        if (kind == Kind.VAR)
+            return VMWriter.Segment.LOCAL;
+        if (kind == Kind.ARG)
+            return VMWriter.Segment.ARG;
+        return null;
     }
 }
