@@ -154,19 +154,33 @@ public class Parser {
     }
 
     void parseLet() {
+
+        var isArray = false;
+
         printNonTerminal("letStatement");
 
         expectPeek(TokenType.LET);
         expectPeek(TokenType.IDENT);
 
+        SymbolTable.Symbol symbol = symTable.resolve(currentToken.lexeme);
+
         if (peekTokenIs(TokenType.LBRACKET)) {
             expectPeek(TokenType.LBRACKET);
             parseExpression();
             expectPeek(TokenType.RBRACKET);
+
+            isArray = true;
         }
 
         expectPeek(TokenType.EQUALS);
         parseExpression();
+
+        if (isArray) {
+
+        } else {
+            vmWriter.writePop(Objects.requireNonNull(kindToSegment(symbol.kind())), symbol.index());
+        }
+
         expectPeek(TokenType.SEMICOLON);
 
         printNonTerminal("/letStatement");
