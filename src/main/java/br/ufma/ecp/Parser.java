@@ -114,8 +114,6 @@ public class Parser {
         printNonTerminal("/term");
     }
     
-
-    
     void parseLet() {
         boolean isArray = false;
     
@@ -128,21 +126,21 @@ public class Parser {
     
         if (peekTokenIs(TokenType.LBRACKET)) { // Array
             expectPeek(TokenType.LBRACKET);
-            parseExpression(); // Calcula o índice
-            vmWriter.writePush(kindToSegment(symbol.kind()), symbol.index()); // Push base address
-            vmWriter.writeArithmetic(Command.ADD); // Base + Index
+            parseExpression(); 
+            vmWriter.writePush(kindToSegment(symbol.kind()), symbol.index()); 
+            vmWriter.writeArithmetic(Command.ADD); 
             expectPeek(TokenType.RBRACKET);
             isArray = true;
         }
     
         expectPeek(TokenType.EQUALS);
-        parseExpression(); // RHS
+        parseExpression();
     
         if (isArray) {
-            vmWriter.writePop(VMWriter.Segment.TEMP, 0); // Guarda o RHS temporariamente
-            vmWriter.writePop(VMWriter.Segment.POINTER, 1); // Pop do endereço base + índice para pointer 1
-            vmWriter.writePush(VMWriter.Segment.TEMP, 0); // Reempurra o RHS
-            vmWriter.writePop(VMWriter.Segment.THAT, 0); // Armazena o RHS no endereço calculado
+            vmWriter.writePop(VMWriter.Segment.TEMP, 0); 
+            vmWriter.writePop(VMWriter.Segment.POINTER, 1); 
+            vmWriter.writePush(VMWriter.Segment.TEMP, 0); 
+            vmWriter.writePop(VMWriter.Segment.THAT, 0); 
         } else {
             vmWriter.writePop(kindToSegment(symbol.kind()), symbol.index());
         }
@@ -150,14 +148,6 @@ public class Parser {
         expectPeek(TokenType.SEMICOLON);
     
         printNonTerminal("/letStatement");
-    }
-
-   
-
-
-    void expr() {
-        number();
-        oper();
     }
 
     void number() {
@@ -194,6 +184,15 @@ public class Parser {
         } else {
             throw new Error("syntax error");
         }
+    }
+
+    private ParseError error(Token token, String message) {
+        if (token.type == TokenType.EOF) {
+            report(token.line, " at end", message);
+        } else {
+            report(token.line, " at '" + token.lexeme + "'", message);
+        }
+        return new ParseError(message);
     }
 
     void parseClassVarDec() {
@@ -263,74 +262,9 @@ public class Parser {
 
             name = currentToken.lexeme;
             symTable.define(name, type, kind);
-
         }
-
         expectPeek(TokenType.SEMICOLON);
         printNonTerminal("/varDec");
-    }
-
-    void parseSubroutineBody(String functionName, TokenType subroutineType) {
-
-        printNonTerminal("subroutineBody");
-        expectPeek(TokenType.LBRACE);
-        while (peekTokenIs(TokenType.VAR)) {
-            parseVarDec();
-        }
-        var nlocals = symTable.varCount(Kind.VAR);
-
-        vmWriter.writeFunction(functionName, nlocals);
-
-        if (subroutineType == TokenType.CONSTRUCTOR) {
-            vmWriter.writePush(VMWriter.Segment.CONST, symTable.varCount(Kind.FIELD));
-            vmWriter.writeCall("Memory.alloc", 1);
-            vmWriter.writePop(VMWriter.Segment.POINTER, 0);
-        }
-
-        if (subroutineType == TokenType.METHOD) {
-            vmWriter.writePush(VMWriter.Segment.ARG, 0);
-            vmWriter.writePop(VMWriter.Segment.POINTER, 0);
-        }
-
-
-        parseStatements();
-        expectPeek(TokenType.RBRACE);
-        printNonTerminal("/subroutineBody");
-    }
-
-    void parseStatements() {
-        printNonTerminal("statements");
-        while (peekToken.type == TokenType.WHILE ||
-                peekToken.type == TokenType.IF ||
-                peekToken.type == TokenType.LET ||
-                peekToken.type == TokenType.DO ||
-                peekToken.type == TokenType.RETURN) {
-            parseStatement();
-        }
-
-        printNonTerminal("/statements");
-    }
-
-    void parseStatement() {
-        switch (peekToken.type) {
-            case LET:
-                parseLet();
-                break;
-            case WHILE:
-                parseWhile();
-                break;
-            case IF:
-                parseIf();
-                break;
-            case RETURN:
-                parseReturn();
-                break;
-            case DO:
-                parseDo();
-                break;
-            default:
-                throw error(peekToken, "Expected a statement");
-        }
     }
 
     void parseParameterList() {
@@ -357,59 +291,145 @@ public class Parser {
 
                 symTable.define(name, type, kind);
             }
-
         }
 
         printNonTerminal("/parameterList");
     }
 
+    void parseStatement() {
+
+        switch (peekToken.type) {
+            case LET:
+                parseLet();
+                break;
+            case WHILE:
+                parseWhile();
+                break;
+            case IF:
+                parseIf();
+                break;
+            case RETURN:
+                parseReturn();
+                break;
+            case DO:
+                parseDo();
+                break;
+            default:
+                throw error(peekToken, "Expected a statement");
+        }
+    }
+
+    void parseSubroutineCall() {
+        String functionName = currentToken.lexeme;
+        SymbolTable.Symbol symbol = symTable.resolve(functionName);
+        int nArgs = 0;
+    
+        if (peekTokenIs(TokenType.LPAREN)) {
+            functionName = className + "." + functionName;
+            vmWriter.writePush(VMWriter.Segment.POINTER, 0); 
+            nArgs = 1 + parseExpressionList(); 
+            expectPeek(TokenType.RPAREN);
+        } else if (peekTokenIs(TokenType.DOT)) {
+            expectPeek(TokenType.DOT); 
+            expectPeek(TokenType.IDENT); 
+            String methodName = currentToken.lexeme;
+
+            if (symbol != null) {
+                functionName = symbol.type() + "." + methodName;
+                vmWriter.writePush(kindToSegment(symbol.kind()), symbol.index());
+                nArgs = 1; 
+            } else {
+                functionName = functionName + "." + methodName;
+            }
+            expectPeek(TokenType.LPAREN); 
+            nArgs += parseExpressionList();
+            expectPeek(TokenType.RPAREN); 
+        }
+    
+        vmWriter.writeCall(functionName, nArgs);
+    }
+    
     void parseSubroutineDec() {
         printNonTerminal("subroutineDec");
-
+    
         ifLabelNum = 0;
         whileLabelNum = 0;
-
+    
         symTable.startSubroutine();
-
+    
         expectPeek(TokenType.CONSTRUCTOR, TokenType.FUNCTION, TokenType.METHOD);
-        var subroutineType = currentToken.type;
-
+        TokenType subroutineType = currentToken.type;
+    
         if (subroutineType == TokenType.METHOD) {
             symTable.define("this", className, Kind.ARG);
         }
-
+    
         expectPeek(TokenType.VOID, TokenType.INT, TokenType.CHAR, TokenType.BOOLEAN, TokenType.IDENT);
+        //String returnType = currentToken.lexeme;
+    
         expectPeek(TokenType.IDENT);
-
-        var functionName = className + "." + currentToken.lexeme;
-
+        String subroutineName = currentToken.lexeme;
+    
         expectPeek(TokenType.LPAREN);
         parseParameterList();
         expectPeek(TokenType.RPAREN);
-        parseSubroutineBody(functionName, subroutineType);
-
+    
+        parseSubroutineBody(className + "." + subroutineName, subroutineType);
+    
         printNonTerminal("/subroutineDec");
     }
+    
+    void parseSubroutineBody(String functionName, TokenType subroutineType) {
 
-    void parseExpression() {
-        printNonTerminal("expression");
-        parseTerm();
-        while (isOperator(peekToken.lexeme)) {
-            TokenType operator = peekToken.type;
-            expectPeek(peekToken.type);
-            parseTerm();
-            compileOperators(operator);
+        printNonTerminal("subroutineBody");
+        expectPeek(TokenType.LBRACE);
+        while (peekTokenIs(TokenType.VAR)) {
+            parseVarDec();
         }
-        printNonTerminal("/expression");
+        var nlocals = symTable.varCount(Kind.VAR);
+
+        vmWriter.writeFunction(functionName, nlocals);
+
+        if (subroutineType == TokenType.CONSTRUCTOR) {
+            vmWriter.writePush(VMWriter.Segment.CONST, symTable.varCount(Kind.FIELD));
+            vmWriter.writeCall("Memory.alloc", 1);
+            vmWriter.writePop(VMWriter.Segment.POINTER, 0);
+        }
+
+        if (subroutineType == TokenType.METHOD) {
+            vmWriter.writePush(VMWriter.Segment.ARG, 0);
+            vmWriter.writePop(VMWriter.Segment.POINTER, 0);
+        }
+
+        parseStatements();
+        expectPeek(TokenType.RBRACE);
+        printNonTerminal("/subroutineBody");
+    }
+    
+    void parseStatements() {
+        printNonTerminal("statements");
+        while (peekToken.type == TokenType.WHILE || peekToken.type == TokenType.IF ||
+               peekToken.type == TokenType.LET || peekToken.type == TokenType.DO ||
+               peekToken.type == TokenType.RETURN) {
+            parseStatement();
+        }
+        printNonTerminal("/statements");
     }
 
-    boolean peekTokenIs(TokenType type) {
-        return peekToken.type == type;
+    void parseDo() {
+        printNonTerminal("doStatement");
+    
+        expectPeek(TokenType.DO);  
+        parseSubroutineCall();  
+        expectPeek(TokenType.SEMICOLON); 
+        
+        vmWriter.writePop(VMWriter.Segment.TEMP, 0); 
+    
+        printNonTerminal("/doStatement");
     }
-
-    boolean currentTokenIs(TokenType type) {
-        return currentToken.type == type;
-    }
+    
+    
+    
 
     private void expectPeek(TokenType... types) {
         for (TokenType type : types) {
@@ -432,13 +452,28 @@ public class Parser {
         }
     }
 
-    private ParseError error(Token token, String message) {
-        if (token.type == TokenType.EOF) {
-            report(token.line, " at end", message);
-        } else {
-            report(token.line, " at '" + token.lexeme + "'", message);
+
+
+    void parseExpression() {
+        printNonTerminal("expression");
+        parseTerm();
+        while (isOperator(peekToken.lexeme)) {
+            TokenType operator = peekToken.type;
+            expectPeek(peekToken.type);
+            parseTerm();
+            compileOperators(operator);
         }
-        return new ParseError(message);
+        printNonTerminal("/expression");
+    }
+
+    
+
+    boolean peekTokenIs(TokenType type) {
+        return peekToken.type == type;
+    }
+
+    boolean currentTokenIs(TokenType type) {
+        return currentToken.type == type;
     }
 
     public String VMOutput() {
@@ -473,51 +508,6 @@ public class Parser {
         return nArgs;
     }
    
-
-
-    public void parseSubroutineCall() {
-        var nArgs = 0;
-
-        var ident = currentToken.lexeme;
-        var symbol = symTable.resolve(ident);
-        var functionName = ident + ".";
-        
-        //expectPeek(TokenType.IDENT);
-
-        if (peekTokenIs(TokenType.LPAREN)) {
-            expectPeek(TokenType.LPAREN);
-            vmWriter.writePush(VMWriter.Segment.POINTER, 0);
-            nArgs = parseExpressionList() + 1;
-            expectPeek(TokenType.RPAREN);
-            functionName = className + "." + ident;
-        } else {
-            expectPeek(TokenType.DOT);
-            expectPeek(TokenType.IDENT);
-    
-            if (symbol != null) {
-                functionName = symbol.type() + "." + currentToken.lexeme;
-                vmWriter.writePush(kindToSegment(symbol.kind()), symbol.index());
-                nArgs = 1;
-            } else {
-                functionName += currentToken.lexeme;
-            }
-    
-            expectPeek(TokenType.LPAREN);
-            nArgs += parseExpressionList();
-            expectPeek(TokenType.RPAREN);
-        }
-    
-        vmWriter.writeCall(functionName, nArgs);
-    }
-
-    void parseDo() {
-        printNonTerminal("doStatement");
-        expectPeek(TokenType.DO);
-        parseSubroutineCall();
-        expectPeek(TokenType.SEMICOLON);
-        printNonTerminal("/doStatement");
-    }
-
     void parseReturn() {
         printNonTerminal("returnStatement");
 
