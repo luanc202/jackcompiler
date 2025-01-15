@@ -319,35 +319,41 @@ public class Parser {
         }
     }
 
-    void parseSubroutineCall() {
-        String functionName = currentToken.lexeme;
-        SymbolTable.Symbol symbol = symTable.resolve(functionName);
-        int nArgs = 0;
-    
-        if (peekTokenIs(TokenType.LPAREN)) {
-            functionName = className + "." + functionName;
-            vmWriter.writePush(VMWriter.Segment.POINTER, 0); 
-            nArgs = 1 + parseExpressionList(); 
-            expectPeek(TokenType.RPAREN);
-        } else if (peekTokenIs(TokenType.DOT)) {
-            expectPeek(TokenType.DOT); 
-            expectPeek(TokenType.IDENT); 
-            String methodName = currentToken.lexeme;
+    void parseSubroutineCall() {     
+        
+        var nArgs = 0;
 
-            if (symbol != null) {
-                functionName = symbol.type() + "." + methodName;
+        var ident = currentToken.lexeme;
+        var symbol = symTable.resolve(ident); // classe ou objeto
+        var functionName = ident + ".";
+
+        if (peekTokenIs(TokenType.LPAREN)) { // método da propria classe
+            expectPeek(TokenType.LPAREN);
+            vmWriter.writePush(VMWriter.Segment.POINTER, 0);
+            nArgs = parseExpressionList() + 1;
+            expectPeek(TokenType.RPAREN);
+            functionName = className + "." + ident;
+        } else {
+            // pode ser um metodo de um outro objeto ou uma função
+            expectPeek(TokenType.DOT);
+            expectPeek(TokenType.IDENT); // nome da função
+
+            if (symbol != null) { // é um metodo
+                functionName = symbol.type() + "." + currentToken.lexeme;
                 vmWriter.writePush(kindToSegment(symbol.kind()), symbol.index());
-                nArgs = 1; 
+                nArgs = 1; // do proprio objeto
             } else {
-                functionName = functionName + "." + methodName;
+                functionName += currentToken.lexeme; // é uma função
             }
-            expectPeek(TokenType.LPAREN); 
+
+            expectPeek(TokenType.LPAREN);
             nArgs += parseExpressionList();
-            expectPeek(TokenType.RPAREN); 
+
+            expectPeek(TokenType.RPAREN);
         }
-    
+
         vmWriter.writeCall(functionName, nArgs);
-    }
+  }
     
     void parseSubroutineDec() {
         printNonTerminal("subroutineDec");
@@ -420,6 +426,7 @@ public class Parser {
         printNonTerminal("doStatement");
     
         expectPeek(TokenType.DO);  
+        nextToken();
         parseSubroutineCall();  
         expectPeek(TokenType.SEMICOLON); 
         
@@ -428,9 +435,6 @@ public class Parser {
         printNonTerminal("/doStatement");
     }
     
-    
-    
-
     private void expectPeek(TokenType... types) {
         for (TokenType type : types) {
             if (peekToken.type == type) {
