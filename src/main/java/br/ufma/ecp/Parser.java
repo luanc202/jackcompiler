@@ -453,33 +453,61 @@ public class Parser {
         xmlOutput.append(String.format("<%s>\r\n", nterminal));
     }
 
-    void parseExpressionList() {
+    int parseExpressionList() {
         printNonTerminal("expressionList");
-
+   
+        var nArgs = 0;
+   
         if (!peekTokenIs(TokenType.RPAREN)) {
             parseExpression();
+            nArgs = 1;
         }
-
+   
         while (peekTokenIs(TokenType.COMMA)) {
             expectPeek(TokenType.COMMA);
             parseExpression();
+            nArgs++;
         }
-
+   
         printNonTerminal("/expressionList");
+        return nArgs;
     }
+   
 
 
     public void parseSubroutineCall() {
-        expectPeek(TokenType.IDENT);
+        var nArgs = 0;
 
-        if (peekTokenIs(TokenType.DOT)) {
+        var ident = currentToken.lexeme;
+        var symbol = symTable.resolve(ident);
+        var functionName = ident + ".";
+        
+        //expectPeek(TokenType.IDENT);
+
+        if (peekTokenIs(TokenType.LPAREN)) {
+            expectPeek(TokenType.LPAREN);
+            vmWriter.writePush(VMWriter.Segment.POINTER, 0);
+            nArgs = parseExpressionList() + 1;
+            expectPeek(TokenType.RPAREN);
+            functionName = className + "." + ident;
+        } else {
             expectPeek(TokenType.DOT);
             expectPeek(TokenType.IDENT);
+    
+            if (symbol != null) {
+                functionName = symbol.type() + "." + currentToken.lexeme;
+                vmWriter.writePush(kindToSegment(symbol.kind()), symbol.index());
+                nArgs = 1;
+            } else {
+                functionName += currentToken.lexeme;
+            }
+    
+            expectPeek(TokenType.LPAREN);
+            nArgs += parseExpressionList();
+            expectPeek(TokenType.RPAREN);
         }
-
-        expectPeek(TokenType.LPAREN);
-        parseExpressionList();
-        expectPeek(TokenType.RPAREN);
+    
+        vmWriter.writeCall(functionName, nArgs);
     }
 
     void parseDo() {
