@@ -2,7 +2,6 @@ package br.ufma.ecp;
 
 import br.ufma.ecp.token.Token;
 import br.ufma.ecp.token.TokenType;
-
 import br.ufma.ecp.SymbolTable.Kind;
 
 import java.util.Objects;
@@ -41,16 +40,7 @@ public class Parser {
         parseClass();
     }
 
-    void expr() {
-        number();
-        oper();
-    }
-
-    void number() {
-        System.out.println(currentToken.lexeme);
-        match(TokenType.NUMBER);
-    }
-
+    
     void parseTerm() {
         printNonTerminal("term");
         switch (peekToken.type) {
@@ -83,19 +73,21 @@ public class Parser {
                 break;
             case IDENT:
                 expectPeek(TokenType.IDENT);
-
                 SymbolTable.Symbol sym = symTable.resolve(currentToken.lexeme);
-
+    
                 if (peekTokenIs(TokenType.LPAREN) || peekTokenIs(TokenType.DOT)) {
                     parseSubroutineCall();
+                } else if (peekTokenIs(TokenType.LBRACKET)) {
+                    expectPeek(TokenType.LBRACKET);
+                    parseExpression(); // Calcula o índice
+                    expectPeek(TokenType.RBRACKET);
+    
+                    vmWriter.writePush(kindToSegment(sym.kind()), sym.index()); // Push base address
+                    vmWriter.writeArithmetic(Command.ADD);                     // Base + Index
+                    vmWriter.writePop(VMWriter.Segment.POINTER, 1);            // Pop para pointer 1
+                    vmWriter.writePush(VMWriter.Segment.THAT, 0);              // Push o valor no endereço
                 } else {
-                    if (peekTokenIs(TokenType.LBRACKET)) {
-                        expectPeek(TokenType.LBRACKET);
-                        parseExpression();
-                        expectPeek(TokenType.RBRACKET);
-                    } else {
-                        vmWriter.writePush(Objects.requireNonNull(kindToSegment(sym.kind())), sym.index());
-                    }
+                    vmWriter.writePush(kindToSegment(sym.kind()), sym.index());
                 }
                 break;
             case LPAREN:
@@ -108,7 +100,7 @@ public class Parser {
                 expectPeek(TokenType.NOT, TokenType.MINUS);
                 TokenType operator = currentToken.type;
                 parseTerm();
-
+    
                 if (operator.equals(TokenType.MINUS)) {
                     vmWriter.writeArithmetic(Command.NEG);
                 } else {
@@ -118,8 +110,59 @@ public class Parser {
             default:
                 throw error(peekToken, "term expected");
         }
-
+    
         printNonTerminal("/term");
+    }
+    
+
+    
+    void parseLet() {
+        boolean isArray = false;
+    
+        printNonTerminal("letStatement");
+    
+        expectPeek(TokenType.LET);
+        expectPeek(TokenType.IDENT);
+    
+        SymbolTable.Symbol symbol = symTable.resolve(currentToken.lexeme);
+    
+        if (peekTokenIs(TokenType.LBRACKET)) { // Array
+            expectPeek(TokenType.LBRACKET);
+            parseExpression(); // Calcula o índice
+            vmWriter.writePush(kindToSegment(symbol.kind()), symbol.index()); // Push base address
+            vmWriter.writeArithmetic(Command.ADD); // Base + Index
+            expectPeek(TokenType.RBRACKET);
+            isArray = true;
+        }
+    
+        expectPeek(TokenType.EQUALS);
+        parseExpression(); // RHS
+    
+        if (isArray) {
+            vmWriter.writePop(VMWriter.Segment.TEMP, 0); // Guarda o RHS temporariamente
+            vmWriter.writePop(VMWriter.Segment.POINTER, 1); // Pop do endereço base + índice para pointer 1
+            vmWriter.writePush(VMWriter.Segment.TEMP, 0); // Reempurra o RHS
+            vmWriter.writePop(VMWriter.Segment.THAT, 0); // Armazena o RHS no endereço calculado
+        } else {
+            vmWriter.writePop(kindToSegment(symbol.kind()), symbol.index());
+        }
+    
+        expectPeek(TokenType.SEMICOLON);
+    
+        printNonTerminal("/letStatement");
+    }
+
+   
+
+
+    void expr() {
+        number();
+        oper();
+    }
+
+    void number() {
+        System.out.println(currentToken.lexeme);
+        match(TokenType.NUMBER);
     }
 
     private void nextToken() {
@@ -151,39 +194,6 @@ public class Parser {
         } else {
             throw new Error("syntax error");
         }
-    }
-
-    void parseLet() {
-
-        var isArray = false;
-
-        printNonTerminal("letStatement");
-
-        expectPeek(TokenType.LET);
-        expectPeek(TokenType.IDENT);
-
-        SymbolTable.Symbol symbol = symTable.resolve(currentToken.lexeme);
-
-        if (peekTokenIs(TokenType.LBRACKET)) {
-            expectPeek(TokenType.LBRACKET);
-            parseExpression();
-            expectPeek(TokenType.RBRACKET);
-
-            isArray = true;
-        }
-
-        expectPeek(TokenType.EQUALS);
-        parseExpression();
-
-        if (isArray) {
-
-        } else {
-            vmWriter.writePop(Objects.requireNonNull(kindToSegment(symbol.kind())), symbol.index());
-        }
-
-        expectPeek(TokenType.SEMICOLON);
-
-        printNonTerminal("/letStatement");
     }
 
     void parseClassVarDec() {

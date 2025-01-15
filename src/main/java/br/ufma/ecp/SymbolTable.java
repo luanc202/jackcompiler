@@ -1,6 +1,5 @@
 package br.ufma.ecp;
 
-import br.ufma.ecp.token.TokenType;
 
 import java.util.HashMap;
 import java.util.Map;
