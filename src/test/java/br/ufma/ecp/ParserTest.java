@@ -47,8 +47,7 @@ public class ParserTest extends TestSupport {
 
     }
 
-
-
+    
     @Test
     public void testParseTermString() {
         var input = "\"Hello World\"";
