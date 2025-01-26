@@ -1,4 +1,4 @@
-package br.ufma.ecp;
+package br.ufma.ecp.targetcode;
 
 import java.io.*;
 import java.util.*;
@@ -8,8 +8,14 @@ public class VMParser {
     private String currentLine;
     private StringTokenizer tokenizer;
 
-    public VMParser(String fileName) throws IOException {
-        reader = new BufferedReader(new FileReader(fileName));
+    public VMParser(String input) throws IOException {
+        if (input.contains("\n") || input.contains("\r")) {
+            // Trata entrada como string (programavm)
+            reader = new BufferedReader(new StringReader(input));
+        } else {
+            // Trata entrada como caminho de arquivo
+            reader = new BufferedReader(new FileReader(input));
+        }
     }
 
     public boolean hasMoreCommands() throws IOException {
@@ -49,13 +55,17 @@ public class VMParser {
     public String arg1() {
         if (commandType().equals("C_ARITHMETIC")) {
             return tokenizer.nextToken();
-        } else {
+        } else if (tokenizer.hasMoreTokens()) {
             return tokenizer.nextToken();
         }
+        return null;
     }
 
     public int arg2() {
-        return Integer.parseInt(tokenizer.nextToken());
+        if (tokenizer.hasMoreTokens()) {
+            return Integer.parseInt(tokenizer.nextToken());
+        }
+        return 0;
     }
 
     public void close() throws IOException {

@@ -1,4 +1,4 @@
-package br.ufma.ecp;
+package br.ufma.ecp.targetcode;
 
 import java.io.IOException;
 
@@ -6,12 +6,7 @@ public class VMApp {
 
     // O programa VM como string
     private static final String programavm = """
-        // This file is part of www.nand2tetris.org
-        // and the book "The Elements of Computing Systems"
-        // by Nisan and Schocken, MIT Press.
-        // File name: projects/07/MemoryAccess/BasicTest/BasicTest.vm
-
-        // Executes pop and push commands using the virtual memory segments.
+        // Exemplo de comandos VM
         push constant 10
         pop local 0
         push constant 21
@@ -42,13 +37,13 @@ public class VMApp {
     public static void main(String[] args) {
         String outputFile = "program.asm"; // Arquivo de saída
 
-        // Usa o conteúdo da string programavm como entrada para a tradução
         try {
-            VMTranslator translator = new VMTranslator(programavm, outputFile);
-            translator.translate();
-            System.out.println("Tradução concluída. Arquivo gerado: " + outputFile);
+            VMTranslator translator = new VMTranslator(outputFile);
+            translator.translate(programavm);
+            System.out.println("Tradução concluída com sucesso! Arquivo gerado: " + outputFile);
         } catch (IOException e) {
-            System.err.println("Erro ao traduzir o conteúdo: " + e.getMessage());
+            System.err.println("Erro ao traduzir o programa VM: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
