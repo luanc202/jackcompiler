@@ -10,10 +10,8 @@ public class VMParser {
 
     public VMParser(String input) throws IOException {
         if (input.contains("\n") || input.contains("\r")) {
-            // Trata entrada como string (programavm)
             reader = new BufferedReader(new StringReader(input));
         } else {
-            // Trata entrada como caminho de arquivo
             reader = new BufferedReader(new FileReader(input));
         }
     }

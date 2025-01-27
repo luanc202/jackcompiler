@@ -86,7 +86,6 @@ public class CodeWriter {
             case "eq":
                 assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@TRUE\nD;JEQ\n@SP\nA=M\nM=0\n@END\n0;JMP\n(TRUE)\n@SP\nA=M\nM=-1\n(END)";
                 break;
-            // Adicione mais operações aritméticas e lógicas conforme necessário
         }
         writer.write(assemblyCode + "\n");
     }

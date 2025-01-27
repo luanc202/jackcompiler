@@ -4,7 +4,6 @@ import java.io.IOException;
 
 public class VMApp {
 
-    // O programa VM como string
     private static final String programavm = """
         // Exemplo de comandos VM
         push constant 10
@@ -35,7 +34,7 @@ public class VMApp {
         """;
 
     public static void main(String[] args) {
-        String outputFile = "program.asm"; // Arquivo de saída
+        String outputFile = "program.asm";
 
         try {
             VMTranslator translator = new VMTranslator(outputFile);

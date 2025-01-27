@@ -18,7 +18,7 @@ public class VMTranslator {
         while ((line = reader.readLine()) != null) {
             line = line.trim();
             if (line.isEmpty() || line.startsWith("//")) {
-                continue; // Ignora linhas vazias ou comentários
+                continue;
             }
 
             String[] parts = line.split(" ");
