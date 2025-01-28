@@ -81,7 +81,7 @@ public class CodeWriter {
                 assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nM=M-D";
                 break;
             case "neg":
-                assemblyCode = "@SP\nAM=M-1\nM=-M";
+                assemblyCode = "@SP\nA=M-1\nM=-M";
                 break;
             case "eq":
                 assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@TRUE\nD;JEQ\n@SP\nA=M\nM=0\n@END\n0;JMP\n(TRUE)\n@SP\nA=M\nM=-1\n(END)";
