@@ -47,10 +47,8 @@ public class VMTranslator {
                     codeWriter.writePop(segment, index);
                     break;
 
-                case "add":
-                    codeWriter.writeArithmetic(commandType);
-                case "sub":
-                    codeWriter.writeArithmetic(commandType);
+                case "add":  
+                case "sub":             
                 case "neg":
                 case "eq":
                     codeWriter.writeArithmetic(commandType);
