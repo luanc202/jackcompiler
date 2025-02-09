@@ -8,10 +8,10 @@ public class CodeWriter {
     private BufferedWriter writer;
 
     public CodeWriter(String outputFile) throws IOException {
-        writer = new BufferedWriter(new FileWriter(outputFile));
+        writer = new BufferedWriter(new FileWriter(outputFile, true));  // Modo append
     }
 
-    public void writePush(String segment, int index) throws IOException {
+    public void writePush(String segment, int index, String filePrefix) throws IOException {
         String assemblyCode = "";
         switch (segment) {
             case "constant":
@@ -36,13 +36,13 @@ public class CodeWriter {
                 assemblyCode = "@" + (3 + index) + "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1";
                 break;
             case "static":
-                assemblyCode = "@Foo." + index + "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1";
+                assemblyCode = "@" + filePrefix + "." + index + "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1";
                 break;
         }
         writer.write(assemblyCode + "\n");
     }
-    
-    public void writePop(String segment, int index) throws IOException {
+
+    public void writePop(String segment, int index, String filePrefix) throws IOException {
         String assemblyCode = "";
         switch (segment) {
             case "local":
@@ -64,12 +64,11 @@ public class CodeWriter {
                 assemblyCode = "@SP\nAM=M-1\nD=M\n@" + (3 + index) + "\nM=D";
                 break;
             case "static":
-                assemblyCode = "@SP\nAM=M-1\nD=M\n@Foo." + index + "\nM=D";
+                assemblyCode = "@SP\nAM=M-1\nD=M\n@" + filePrefix + "." + index + "\nM=D";
                 break;
         }
         writer.write(assemblyCode + "\n");
     }
-    
 
     public void writeArithmetic(String command) throws IOException {
         String assemblyCode = "";

@@ -6,9 +6,11 @@ import java.io.StringReader;
 
 public class VMTranslator {
     private CodeWriter codeWriter;
+    private String filePrefix;  // Prefixo do arquivo (nome do arquivo sem a extensão)
 
-    public VMTranslator(String outputFile) throws IOException {
+    public VMTranslator(String outputFile, String filePrefix) throws IOException {
         codeWriter = new CodeWriter(outputFile);
+        this.filePrefix = filePrefix;  // Recebe o prefixo do arquivo para uso nas variáveis estáticas
     }
 
     public void translate(String vmCode) throws IOException {
@@ -35,7 +37,7 @@ public class VMTranslator {
                     }
                     String segment = parts[1];
                     int index = Integer.parseInt(parts[2]);
-                    codeWriter.writePush(segment, index);
+                    codeWriter.writePush(segment, index, filePrefix);  // Passa o prefixo do arquivo
                     break;
 
                 case "pop":
@@ -44,7 +46,7 @@ public class VMTranslator {
                     }
                     segment = parts[1];
                     index = Integer.parseInt(parts[2]);
-                    codeWriter.writePop(segment, index);
+                    codeWriter.writePop(segment, index, filePrefix);  // Passa o prefixo do arquivo
                     break;
 
                 case "add":  
