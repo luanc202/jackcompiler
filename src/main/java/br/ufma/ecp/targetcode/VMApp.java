@@ -45,9 +45,9 @@ public class VMApp {
         }
 
         // Adicionando a inicialização ao arquivo de saída
-        fullAssemblyCode.append("// Bootstrap\n");
-        fullAssemblyCode.append("@256\nD=A\n@SP\nM=D\n"); // Inicializa o stack pointer
-        fullAssemblyCode.append("@Sys.init\n0;JMP\n"); // Chama a função sys.init
+//        fullAssemblyCode.append("// Bootstrap\n");
+//        fullAssemblyCode.append("@256\nD=A\n@SP\nM=D\n"); // Inicializa o stack pointer
+//        fullAssemblyCode.append("@Sys.init\n0;JMP\n"); // Chama a função sys.init
 
         // Compilando cada arquivo .vm da pasta
         if (file.isDirectory()) {
