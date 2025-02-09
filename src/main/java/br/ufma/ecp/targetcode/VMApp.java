@@ -10,14 +10,9 @@ import java.nio.file.Files;
 public class VMApp {
 
     public static void saveToFile(String fileName, String output) {
-        FileOutputStream outputStream;
-        try {
-            outputStream = new FileOutputStream(fileName, true); // Abre em modo append
+        try (FileOutputStream outputStream = new FileOutputStream(fileName)) {
             byte[] strToBytes = output.getBytes();
             outputStream.write(strToBytes);
-            outputStream.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -27,7 +22,7 @@ public class VMApp {
         byte[] bytes;
         try {
             bytes = Files.readAllBytes(file.toPath());
-            return new String(bytes, "UTF-8");
+            return new String(bytes, StandardCharsets.UTF_8);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -36,41 +31,59 @@ public class VMApp {
 
     public static void main(String[] args) {
         String outputFile = "program.asm";
+        StringBuilder fullAssemblyCode = new StringBuilder();
 
         if (args.length != 1) {
-            System.err.println("Please provide a single directory path argument.");
+            System.err.println("Please provide a single file path argument.");
             System.exit(1);
         }
 
         File file = new File(args[0]);
-
         if (!file.exists()) {
             System.err.println("The file doesn't exist.");
             System.exit(1);
         }
 
-        // Processa todos os arquivos .vm na pasta fornecida
+        // Adicionando a inicialização ao arquivo de saída
+        fullAssemblyCode.append("// Bootstrap\n");
+        fullAssemblyCode.append("@256\nD=A\n@SP\nM=D\n"); // Inicializa o stack pointer
+        fullAssemblyCode.append("@Sys.init\n0;JMP\n"); // Chama a função sys.init
+
+        // Compilando cada arquivo .vm da pasta
         if (file.isDirectory()) {
             for (File f : file.listFiles()) {
                 if (f.isFile() && f.getName().endsWith(".vm")) {
-                    String inputFileName = f.getAbsolutePath();
-                    System.out.println("Compiling " + inputFileName);
+                    System.out.println("compiling " + f.getAbsolutePath());
                     String programavm = fromFile(f);
-
-                    // Passa o nome do arquivo para o tradutor para usar nas variáveis estáticas
                     try {
-                        VMTranslator translator = new VMTranslator(outputFile, f.getName().replace(".vm", ""));
-                        translator.translate(programavm);
-                        System.out.println("Tradução concluída com sucesso! Arquivo gerado: " + outputFile);
+                        VMTranslator translator = new VMTranslator(outputFile);
+                        String translatedCode = translator.translate(programavm);
+                        fullAssemblyCode.append(translatedCode);
                     } catch (IOException e) {
                         System.err.println("Erro ao traduzir o programa VM: " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
             }
-        } else {
-            System.err.println("Please provide a directory containing .vm files.");
-            System.exit(1);
+        } else if (file.isFile()) {
+            if (!file.getName().endsWith(".vm")) {
+                System.err.println("Please provide a file name ending with .vm");
+                System.exit(1);
+            }
+            System.out.println("compiling " + file.getAbsolutePath());
+            String programavm = fromFile(file);
+            try {
+                VMTranslator translator = new VMTranslator(outputFile);
+                String translatedCode = translator.translate(programavm);
+                fullAssemblyCode.append(translatedCode);
+            } catch (IOException e) {
+                System.err.println("Erro ao traduzir o programa VM: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
+
+        // Salva todo o código gerado no arquivo de saída
+        saveToFile(outputFile, fullAssemblyCode.toString());
+        System.out.println("Tradução concluída com sucesso! Arquivo gerado: " + outputFile);
     }
 }

@@ -8,10 +8,10 @@ public class CodeWriter {
     private BufferedWriter writer;
 
     public CodeWriter(String outputFile) throws IOException {
-        writer = new BufferedWriter(new FileWriter(outputFile, true));  // Modo append
+        writer = new BufferedWriter(new FileWriter(outputFile, true)); // Modo append
     }
 
-    public void writePush(String segment, int index, String filePrefix) throws IOException {
+    public String writePush(String segment, int index) throws IOException {
         String assemblyCode = "";
         switch (segment) {
             case "constant":
@@ -36,13 +36,13 @@ public class CodeWriter {
                 assemblyCode = "@" + (3 + index) + "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1";
                 break;
             case "static":
-                assemblyCode = "@" + filePrefix + "." + index + "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1";
+                assemblyCode = "@Foo." + index + "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1";
                 break;
         }
-        writer.write(assemblyCode + "\n");
+        return assemblyCode + "\n";
     }
 
-    public void writePop(String segment, int index, String filePrefix) throws IOException {
+    public String writePop(String segment, int index) throws IOException {
         String assemblyCode = "";
         switch (segment) {
             case "local":
@@ -57,24 +57,15 @@ public class CodeWriter {
             case "that":
                 assemblyCode = "@THAT\nD=M\n@" + index + "\nD=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D";
                 break;
-            case "temp":
-                assemblyCode = "@SP\nAM=M-1\nD=M\n@" + (5 + index) + "\nM=D";
-                break;
-            case "pointer":
-                assemblyCode = "@SP\nAM=M-1\nD=M\n@" + (3 + index) + "\nM=D";
-                break;
-            case "static":
-                assemblyCode = "@SP\nAM=M-1\nD=M\n@" + filePrefix + "." + index + "\nM=D";
-                break;
         }
-        writer.write(assemblyCode + "\n");
+        return assemblyCode + "\n";
     }
 
-    public void writeArithmetic(String command) throws IOException {
+    public String writeArithmetic(String command) throws IOException {
         String assemblyCode = "";
         switch (command) {
             case "add":
-                assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nM=D+M";
+                assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nM=M+D";
                 break;
             case "sub":
                 assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nM=M-D";
@@ -83,11 +74,14 @@ public class CodeWriter {
                 assemblyCode = "@SP\nA=M-1\nM=-M";
                 break;
             case "eq":
-                assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@TRUE\nD;JEQ\n@SP\nA=M\nM=0\n@END\n0;JMP\n(TRUE)\n@SP\nA=M\nM=-1\n(END)";
+                assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@TRUE\nD;JEQ\n@SP\nA=M-1\nM=0\n@END\n0;JMP\n(TRUE)\n@SP\nA=M-1\nM=-1\n(END)";
                 break;
         }
-        writer.write(assemblyCode + "\n");
+        return assemblyCode + "\n";
     }
+
+   
+
 
     public void close() throws IOException {
         writer.close();

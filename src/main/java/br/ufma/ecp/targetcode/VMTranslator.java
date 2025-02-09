@@ -6,14 +6,13 @@ import java.io.StringReader;
 
 public class VMTranslator {
     private CodeWriter codeWriter;
-    private String filePrefix;  // Prefixo do arquivo (nome do arquivo sem a extensão)
 
-    public VMTranslator(String outputFile, String filePrefix) throws IOException {
+    public VMTranslator(String outputFile) throws IOException {
         codeWriter = new CodeWriter(outputFile);
-        this.filePrefix = filePrefix;  // Recebe o prefixo do arquivo para uso nas variáveis estáticas
     }
 
-    public void translate(String vmCode) throws IOException {
+    public String translate(String vmCode) throws IOException {
+        StringBuilder assemblyCode = new StringBuilder();
         BufferedReader reader = new BufferedReader(new StringReader(vmCode));
         String line;
 
@@ -37,7 +36,7 @@ public class VMTranslator {
                     }
                     String segment = parts[1];
                     int index = Integer.parseInt(parts[2]);
-                    codeWriter.writePush(segment, index, filePrefix);  // Passa o prefixo do arquivo
+                    assemblyCode.append(codeWriter.writePush(segment, index));
                     break;
 
                 case "pop":
@@ -46,14 +45,14 @@ public class VMTranslator {
                     }
                     segment = parts[1];
                     index = Integer.parseInt(parts[2]);
-                    codeWriter.writePop(segment, index, filePrefix);  // Passa o prefixo do arquivo
+                    assemblyCode.append(codeWriter.writePop(segment, index));
                     break;
 
-                case "add":  
-                case "sub":             
+                case "add":
+                case "sub":
                 case "neg":
                 case "eq":
-                    codeWriter.writeArithmetic(commandType);
+                    assemblyCode.append(codeWriter.writeArithmetic(commandType));
                     break;
 
                 default:
@@ -61,6 +60,6 @@ public class VMTranslator {
             }
         }
 
-        codeWriter.close();
+        return assemblyCode.toString();
     }
 }
