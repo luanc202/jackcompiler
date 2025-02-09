@@ -80,8 +80,17 @@ public class CodeWriter {
         return assemblyCode + "\n";
     }
 
-   
+    public String writeLabel(String label) throws IOException {
+        return ("(" + label + ")\n");
+    }
 
+    public String writeGoto(String label) throws IOException {
+        return ("@SP\nA=M-1\nD=M\n@" + label + "\nD;JNE\n@SP\nM=M-1\n");
+    }
+
+    public String writeIf(String label) throws IOException {
+        return ("@SP\nAM=M-1\nD=M\n@" + label + "\nD;JNE\n");
+    }
 
     public void close() throws IOException {
         writer.close();
