@@ -72,6 +72,24 @@ public class VMTranslator {
                     assemblyCode.append(codeWriter.writeArithmetic(commandType));
                     break;
 
+                case "call":
+                    if (parts.length != 3) {
+                        throw new IllegalArgumentException("Comando call inválido: " + line);
+                    }
+                    String functionName = parts[1];
+                    int nArgs = Integer.parseInt(parts[2]);
+                    assemblyCode.append(codeWriter.writeCall(functionName, nArgs));
+                    break;
+
+                case "function":
+                    if (parts.length != 3) {
+                        throw new IllegalArgumentException("Comando function inválido: " + line);
+                    }
+                    functionName = parts[1];
+                    nArgs = Integer.parseInt(parts[2]);
+                    assemblyCode.append(codeWriter.writeFunction(functionName, nArgs));
+                    break;
+
                 default:
                     throw new UnsupportedOperationException("Comando desconhecido: " + commandType);
             }

@@ -92,6 +92,34 @@ public class CodeWriter {
         return ("@SP\nAM=M-1\nD=M\n@" + label + "\nD;JNE\n");
     }
 
+
+    public String writeCall(String functionName, int nArgs) throws IOException {
+        StringBuilder assemblyCode = new StringBuilder();
+        String returnLabel = "RETURN_" + functionName;
+        assemblyCode.append("@" + returnLabel + "\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n");
+        for (String segment : new String[]{"LCL", "ARG", "THIS", "THAT"}) {
+            assemblyCode.append("@" + segment + "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n");
+        }
+        assemblyCode.append("@SP\nD=M\n@" + (nArgs + 5) + "\nD=D-A\n@ARG\nM=D\n");
+        assemblyCode.append("@SP\nD=M\n@LCL\nM=D\n");
+
+        assemblyCode.append("@" + functionName + "\n0;JMP\n");
+        assemblyCode.append("(" + returnLabel + ")\n");
+
+        return assemblyCode.toString();
+    }
+
+
+    public String writeFunction(String functionName, int nLocals) throws IOException {
+        StringBuilder assemblyCode = new StringBuilder();
+        assemblyCode.append("(" + functionName + ")\n");
+        for (int i = 0; i < nLocals; i++) {
+            assemblyCode.append("@SP\nA=M\nM=0\n@SP\nM=M+1\n");
+        }
+    
+        return assemblyCode.toString();
+    }
+
     public void close() throws IOException {
         writer.close();
     }
