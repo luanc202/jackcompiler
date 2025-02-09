@@ -47,7 +47,24 @@ public class VMTranslator {
                     index = Integer.parseInt(parts[2]);
                     assemblyCode.append(codeWriter.writePop(segment, index));
                     break;
-
+                case "label":
+                    if (parts.length != 2) {
+                        throw new IllegalArgumentException("Comando label inválido: " + line);
+                    }
+                    assemblyCode.append(codeWriter.writeLabel(parts[1]));
+                    break;
+                case "goto":
+                    if (parts.length != 2) {
+                        throw new IllegalArgumentException("Comando goto inválido: " + line);
+                    }
+                    assemblyCode.append(codeWriter.writeGoto(parts[1]));
+                    break;
+                case "if-goto":
+                    if (parts.length != 2) {
+                        throw new IllegalArgumentException("Comando if-goto inválido: " + line);
+                    }
+                    assemblyCode.append(codeWriter.writeIf(parts[1]));
+                    break;
                 case "add":
                 case "sub":
                 case "neg":
