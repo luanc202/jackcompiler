@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Objects;
 
 public class VMApp {
 
@@ -47,7 +48,7 @@ public class VMApp {
 
         // Compilando cada arquivo .vm da pasta
         if (file.isDirectory()) {
-            for (File f : file.listFiles()) {
+            for (File f : Objects.requireNonNull(file.listFiles())) {
                 if (f.isFile() && f.getName().endsWith(".vm")) {
                     System.out.println("compiling " + f.getAbsolutePath());
                     String programavm = fromFile(f);
