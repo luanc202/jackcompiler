@@ -17,12 +17,12 @@ public class VMTranslator {
         String line;
 
         while ((line = reader.readLine()) != null) {
-            line = line.trim();
-            if (line.isEmpty() || line.startsWith("//")) {
+            line = line.split("//")[0].trim(); // Remove os comentários no final da linha
+            if (line.isEmpty()) {
                 continue;
             }
-
-            String[] parts = line.split(" ");
+        
+            String[] parts = line.split("\\s+"); // Usa regex para lidar com múltiplos espaços        
             String commandType = parts[0];
 
             if (commandType == null || commandType.isEmpty()) {
