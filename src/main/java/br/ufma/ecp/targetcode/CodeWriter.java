@@ -6,6 +6,7 @@ import java.io.IOException;
 
 public class CodeWriter {
     private final BufferedWriter writer;
+    private int labelCounter = 0;
 
     public CodeWriter(String outputFile) throws IOException {
         writer = new BufferedWriter(new FileWriter(outputFile, true)); // Modo append
@@ -38,14 +39,28 @@ public class CodeWriter {
     }
 
     public String writeArithmetic(String command) throws IOException {
-        String assemblyCode = switch (command) {
-            case "add" -> "@SP\nAM=M-1\nD=M\nA=A-1\nM=M+D";
-            case "sub" -> "@SP\nAM=M-1\nD=M\nA=A-1\nM=M-D";
-            case "neg" -> "@SP\nA=M-1\nM=-M";
-            case "eq" ->
-                    "@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@TRUE\nD;JEQ\n@SP\nA=M-1\nM=0\n@END\n0;JMP\n(TRUE)\n@SP\nA=M-1\nM=-1\n(END)";
-            default -> "";
-        };
+        String assemblyCode = "";
+        switch (command) {
+            case "add":
+                assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nM=M+D";
+                break;
+            case "sub":
+                assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nM=M-D";
+                break;
+            case "neg":
+                assemblyCode = "@SP\nA=M-1\nM=-M";
+                break;
+            case "eq":
+                assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@TRUE\nD;JEQ\n@SP\nA=M-1\nM=0\n@END\n0;JMP\n(TRUE)\n@SP\nA=M-1\nM=-1\n(END)";
+                break;
+            case "gt":
+                assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@GT" + labelCounter + "\nD;JGT\n@SP\nA=M\nM=0\n@END" + labelCounter + "\n0;JMP\n(GT" + labelCounter + ")\n@SP\nA=M\nM=-1\n(END" + labelCounter + ")";
+                labelCounter++;
+                break;
+            case "lt":
+                assemblyCode = "@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@LT" + labelCounter + "\nD;JLT\n@SP\nA=M\nM=0\n@END" + labelCounter + "\n0;JMP\n(LT" + labelCounter + ")\n@SP\nA=M\nM=-1\n(END" + labelCounter + ")";
+                labelCounter++;
+        }
         return assemblyCode + "\n";
     }
 
@@ -81,7 +96,7 @@ public class CodeWriter {
 
     public String writeFunction(String functionName, int nLocals) throws IOException {
         StringBuilder assemblyCode = new StringBuilder();
-        assemblyCode.append("(" + functionName + ")\n");
+        assemblyCode.append("(").append(functionName).append(")\n");
         for (int i = 0; i < nLocals; i++) {
             assemblyCode.append("@SP\nA=M\nM=0\n@SP\nM=M+1\n");
         }
