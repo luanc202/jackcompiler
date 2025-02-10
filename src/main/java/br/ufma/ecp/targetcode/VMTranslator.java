@@ -69,6 +69,8 @@ public class VMTranslator {
                 case "sub":
                 case "neg":
                 case "eq":
+                case "lt":
+                case "gt":
                     assemblyCode.append(codeWriter.writeArithmetic(commandType));
                     break;
 
