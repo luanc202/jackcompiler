@@ -4,6 +4,10 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+
 public class CodeWriter {
     private final BufferedWriter writer;
     private int labelCounter = 0;
@@ -41,8 +45,8 @@ public class CodeWriter {
         String assemblyCode = switch (segment) {
             case "local" -> "@LCL\nD=M\n@" + index + "\nD=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D";
             case "argument" -> "@ARG\nD=M\n@" + index + "\nD=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D";
-            case "this" -> "@THIS\nD=M\n@" + index + "\nA=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D";
-            case "that" -> "@THAT\nD=M\n@" + index + "\nA=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D";
+            case "this" -> "@THIS\nD=M\n@" + index + "\nD=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D";
+            case "that" -> "@THAT\nD=M\n@" + index + "\nD=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D";
             case "temp" -> "@SP\nAM=M-1\nD=M\n@" + (5 + index) + "\nM=D";
             case "pointer" -> "@SP\nAM=M-1\nD=M\n@" + (3 + index) + "\nM=D";
             case "static" -> "@SP\nAM=M-1\nD=M\n@" + fileName + "." + index + "\nM=D";
