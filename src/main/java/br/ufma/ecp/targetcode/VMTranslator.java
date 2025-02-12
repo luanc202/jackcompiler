@@ -16,6 +16,28 @@ public class VMTranslator {
     public void translateDirectory(File directory) throws IOException {
         File[] files = directory.listFiles((dir, name) -> name.endsWith(".vm"));
         if (files != null) {
+
+            boolean hasSysInit = false;
+
+            for (File file : files) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        line = line.split("//")[0].trim(); // Remove comentários
+                        if (line.startsWith("function Sys.init")) {
+                            hasSysInit = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasSysInit) break;
+            }
+
+            if (hasSysInit) {
+                codeWriter.writeInit();
+            }
+
+
             for (File file : files) {
                 try (BufferedReader reader = new BufferedReader(new StringReader(fromFile(file)))) {
                     codeWriter.setFileName(file.getName().replace(".vm", ""));
