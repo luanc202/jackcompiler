@@ -21,10 +21,23 @@ public class CodeWriter {
         this.fileName = fileName;
     }
 
-    public void writeInit() throws IOException {
-        writer.write("@256\nD=A\n@SP\nM=D\n"); // Set SP to 256
-        writeCall("Sys.init", 0); // Call Sys.init
-    }
+
+
+/* public void writeInit() throws IOException {
+    writer.write("@261\nD=A\n@SP\nM=D\n");
+
+    writer.write("@3\nD=A\n@261\nM=D\n");
+
+    writer.write("@Sys.init\n0;JMP\n");
+} */
+
+public void writeInit() throws IOException {
+    writer.write("// Bootstrap code\n");
+    writer.write("@256\nD=A\n@SP\nM=D\n"); // SP = 256
+    writeCall("Sys.init", 0); // Chama Sys.init()
+}
+
+
 
     public void writePush(String segment, int index) throws IOException {
         String assemblyCode = switch (segment) {
@@ -104,21 +117,31 @@ public class CodeWriter {
         writer.write("@SP\nAM=M-1\nD=M\n@" + fileName + "$" + label.toUpperCase() + "\nD;JNE\n");
     }
 
-    public void writeCall(String functionName, int nArgs) throws IOException {
-        String returnLabel = "RETURN$" + functionName + "$" + labelCounter;
-        labelCounter++;
-
-        writer.write("@" + returnLabel + "\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"); // Push return address
-        writer.write("@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"); // Push LCL
-        writer.write("@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"); // Push ARG
-        writer.write("@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"); // Push THIS
-        writer.write("@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"); // Push THAT
-
-        writer.write("@" + nArgs + "\nD=A\n@SP\nD=M-D\n@5\nD=D-A\n@ARG\nM=D\n"); // ARG = SP - nArgs - 5
-        writer.write("@SP\nD=M\n@LCL\nM=D\n"); // LCL = SP
-        writer.write("@" + functionName + "\n0;JMP\n"); // Jump to function
-        writer.write("(" + returnLabel + ")\n"); // Return address label
+    public void writeCall(String functionName, int numArgs) throws IOException {
+        String returnLabel = "RETURN_" + labelCounter++;
+    
+        // Salva o endereço de retorno
+        writer.write("@" + returnLabel + "\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n");
+    
+        // Salva os valores de LCL, ARG, THIS, THAT na pilha
+        for (String segment : new String[]{"LCL", "ARG", "THIS", "THAT"}) {
+            writer.write("@" + segment + "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n");
+        }
+    
+        // Define ARG = SP - numArgs - 5
+        writer.write("@SP\nD=M\n@" + (numArgs + 5) + "\nD=D-A\n@ARG\nM=D\n");
+    
+        // Define LCL = SP
+        writer.write("@SP\nD=M\n@LCL\nM=D\n");
+    
+        // Chama a função desejada
+        writer.write("@" + functionName + "\n0;JMP\n");
+    
+        // Label de retorno
+        writer.write("(" + returnLabel + ")\n");
     }
+    
+    
 
     public void writeFunction(String functionName, int nLocals) throws IOException {
         writer.write("(" + functionName + ")\n");
