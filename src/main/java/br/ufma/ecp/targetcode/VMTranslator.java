@@ -42,7 +42,6 @@ public class VMTranslator {
                 try (BufferedReader reader = new BufferedReader(new StringReader(fromFile(file)))) {
                     codeWriter.setFileName(file.getName().replace(".vm", ""));
                     String line;
-                    codeWriter.writeInit();
                     while ((line = reader.readLine()) != null) {
                         line = line.split("//")[0].trim(); // Remove comments and trim
                         if (line.isEmpty()) {
