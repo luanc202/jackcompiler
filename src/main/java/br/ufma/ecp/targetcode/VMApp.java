@@ -1,47 +1,36 @@
 package br.ufma.ecp.targetcode;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Objects;
+
+import java.io.File;
 import java.io.IOException;
 
 public class VMApp {
-
-    private static final String programavm = """
-        // Exemplo de comandos VM
-        push constant 10
-        pop local 0
-        push constant 21
-        push constant 22
-        pop argument 2
-        pop argument 1
-        push constant 36
-        pop this 6
-        push constant 42
-        push constant 45
-        pop that 5
-        pop that 2
-        push constant 510
-        pop temp 6
-        push local 0
-        push that 5
-        add
-        push argument 1
-        sub
-        push this 6
-        push this 6
-        add
-        sub
-        push temp 6
-        add
-        """;
-
     public static void main(String[] args) {
-        String outputFile = "program.asm";
+        if (args.length != 1) {
+            System.err.println("Usage: java VMApp <directory>");
+            return;
+        }
 
+        File directory = new File(args[0]);
+        if (!directory.isDirectory()) {
+            System.err.println("The provided path is not a directory.");
+            return;
+        }
+
+        String outputFile = "program.asm";
         try {
             VMTranslator translator = new VMTranslator(outputFile);
-            translator.translate(programavm);
+            translator.translateDirectory(directory);
             System.out.println("Tradução concluída com sucesso! Arquivo gerado: " + outputFile);
         } catch (IOException e) {
-            System.err.println("Erro ao traduzir o programa VM: " + e.getMessage());
+            System.err.println("Erro ao traduzir os arquivos VM: " + e.getMessage());
             e.printStackTrace();
         }
     }
